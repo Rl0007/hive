@@ -1015,3 +1015,15 @@ def resolved_prompts(project: str | None = None):
 	from bwh_hive.bwh_hive.agent_api import resolve_prompts
 
 	return resolve_prompts(project)
+
+
+@frappe.whitelist(allow_guest=True)
+def ping():
+	"""Health-check endpoint. Returns app name, version, and current server time."""
+	import bwh_hive
+
+	return {
+		"app": "bwh_hive",
+		"version": bwh_hive.__version__,
+		"time": frappe.utils.now_datetime().isoformat(),
+	}
