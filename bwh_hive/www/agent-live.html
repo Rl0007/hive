@@ -1,0 +1,534 @@
+{% extends "templates/web.html" %}
+
+{% block title %}Hive – AI agents that ship your features{% endblock %}
+
+{% block head_include %}
+<style>
+  /*
+   * /agent-live — Hive showcase page
+   * Fully self-contained: no external CDN, no /assets/ references.
+   * Guest-accessible by default (no paired .py → no login_required).
+   * If the site has global "Login Required" enabled, add agent-live to
+   * Website Settings > Allow Guest Access to bypass the redirect.
+   */
+
+  :root {
+    --bg:        #0d0f14;
+    --surface:   #1a1d27;
+    --border:    #2d3148;
+    --text:      #e2e8f0;
+    --muted:     #64748b;
+    --accent1:   #7c3aed;
+    --accent2:   #2563eb;
+    --glow:      rgba(124, 58, 237, 0.45);
+    --glow-soft: rgba(124, 58, 237, 0.15);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── Frappe injects a white page wrapper — override it ── */
+  .page-content-wrapper,
+  .page_content,
+  #page-index,
+  .web-page-wrapper,
+  .container,
+  .row {
+    background: var(--bg) !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* ── Layout ── */
+  .al-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 24px 80px;
+  }
+
+  /* ── Hero ── */
+  .al-hero {
+    text-align: center;
+    margin-bottom: 72px;
+  }
+
+  .al-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .al-logo-hex {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, var(--accent1), var(--accent2));
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    flex-shrink: 0;
+  }
+
+  .al-logo-name {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #a78bfa, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .al-tagline {
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #e2e8f0 30%, #94a3b8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .al-sub {
+    color: var(--muted);
+    font-size: 1.1rem;
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  /* ── Pipeline ── */
+  .al-pipeline-wrap {
+    margin-bottom: 72px;
+  }
+
+  .al-section-label {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+
+  .al-pipeline {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Stage node ── */
+  .al-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 0 0 auto;
+    min-width: 90px;
+    transition: opacity 0.3s ease;
+  }
+
+  .al-stage-node {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: border-color 0.4s ease, box-shadow 0.4s ease, background 0.4s ease;
+    z-index: 1;
+  }
+
+  .al-stage-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+  }
+
+  .al-stage-label {
+    margin-top: 10px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: center;
+    transition: color 0.4s ease;
+    white-space: nowrap;
+  }
+
+  /* Active stage */
+  .al-stage.active .al-stage-node {
+    border-color: var(--accent1);
+    background: var(--glow-soft);
+    box-shadow: 0 0 0 6px var(--glow-soft), 0 0 20px var(--glow);
+  }
+
+  .al-stage.active .al-stage-label {
+    color: #a78bfa;
+  }
+
+  /* ── Connector ── */
+  .al-connector {
+    flex: 1 1 auto;
+    min-width: 32px;
+    max-width: 80px;
+    position: relative;
+    height: 52px;               /* same height as the node row */
+    display: flex;
+    align-items: center;
+  }
+
+  .al-connector-track {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+    overflow: visible;
+  }
+
+  /* Travel dot lives on connector 0 (Issue→Dev Box) and is repositioned by JS */
+  .al-travel-dot {
+    display: none;              /* hidden until JS enables animation */
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--accent1);
+    box-shadow: 0 0 8px var(--glow), 0 0 16px var(--glow);
+    transform: translate(-50%, -50%);
+    transition: left 1s ease, opacity 0.3s ease;
+    z-index: 2;
+  }
+
+  /* ── Feature cards ── */
+  .al-cards-wrap {
+    margin-bottom: 64px;
+  }
+
+  .al-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+
+  .al-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    cursor: default;
+  }
+
+  .al-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 32px var(--glow);
+    border-color: var(--accent1);
+  }
+
+  .al-card-icon {
+    font-size: 1.8rem;
+    margin-bottom: 14px;
+    line-height: 1;
+  }
+
+  .al-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+
+  .al-card-desc {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.55;
+  }
+
+  /* ── Footer ── */
+  .al-footer {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--muted);
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Reduced-motion: disable animation entirely ── */
+  @media (prefers-reduced-motion: reduce) {
+    .al-travel-dot { display: none !important; }
+    .al-stage,
+    .al-stage-node,
+    .al-stage-label,
+    .al-card { transition: none !important; }
+  }
+
+  /* ── Mobile: stack pipeline vertically ── */
+  @media (max-width: 640px) {
+    .al-pipeline {
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+    }
+
+    .al-connector {
+      width: 2px;
+      height: 32px;
+      min-width: unset;
+      max-width: unset;
+      flex: 0 0 auto;
+    }
+
+    .al-connector-track {
+      width: 2px;
+      height: 100%;
+    }
+
+    .al-travel-dot { display: none !important; }
+  }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="al-page">
+
+  <!-- Hero -->
+  <header class="al-hero">
+    <div class="al-logo">
+      <div class="al-logo-hex"></div>
+      <span class="al-logo-name">Hive</span>
+    </div>
+    <h1 class="al-tagline">AI agents that ship your features</h1>
+    <p class="al-sub">From GitHub issue to merged pull request — fully autonomous, fully auditable.</p>
+  </header>
+
+  <!-- Animated pipeline -->
+  <section class="al-pipeline-wrap">
+    <p class="al-section-label">Agent workflow</p>
+    <div class="al-pipeline" id="al-pipeline" role="img" aria-label="Agent pipeline: Issue, Dev Box, Spec, Implement, Pull Request">
+
+      <!-- Stage 0 -->
+      <div class="al-stage active" data-stage="0">
+        <div class="al-stage-node">
+          <span class="al-stage-icon">🐛</span>
+        </div>
+        <span class="al-stage-label">Issue</span>
+      </div>
+
+      <div class="al-connector">
+        <div class="al-connector-track">
+          <!-- travel dot lives here; JS moves it between connectors -->
+          <div class="al-travel-dot" id="al-dot"></div>
+        </div>
+      </div>
+
+      <!-- Stage 1 -->
+      <div class="al-stage" data-stage="1">
+        <div class="al-stage-node">
+          <span class="al-stage-icon">📦</span>
+        </div>
+        <span class="al-stage-label">Dev Box</span>
+      </div>
+
+      <div class="al-connector">
+        <div class="al-connector-track"></div>
+      </div>
+
+      <!-- Stage 2 -->
+      <div class="al-stage" data-stage="2">
+        <div class="al-stage-node">
+          <span class="al-stage-icon">📋</span>
+        </div>
+        <span class="al-stage-label">Spec</span>
+      </div>
+
+      <div class="al-connector">
+        <div class="al-connector-track"></div>
+      </div>
+
+      <!-- Stage 3 -->
+      <div class="al-stage" data-stage="3">
+        <div class="al-stage-node">
+          <span class="al-stage-icon">⚡</span>
+        </div>
+        <span class="al-stage-label">Implement</span>
+      </div>
+
+      <div class="al-connector">
+        <div class="al-connector-track"></div>
+      </div>
+
+      <!-- Stage 4 -->
+      <div class="al-stage" data-stage="4">
+        <div class="al-stage-node">
+          <span class="al-stage-icon">🚀</span>
+        </div>
+        <span class="al-stage-label">Pull Request</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Feature cards -->
+  <section class="al-cards-wrap">
+    <p class="al-section-label">What makes it tick</p>
+    <div class="al-cards-grid">
+
+      <div class="al-card">
+        <div class="al-card-icon">🔥</div>
+        <div class="al-card-title">Firecracker microVM in ~20s</div>
+        <div class="al-card-desc">Each agent task spins up an isolated, disposable microVM — full Linux, sub-second boot, zero shared state between runs.</div>
+      </div>
+
+      <div class="al-card">
+        <div class="al-card-icon">🤖</div>
+        <div class="al-card-title">Claude writes the spec</div>
+        <div class="al-card-desc">Before touching a line of code, the agent drafts a structured implementation spec and waits for human sign-off.</div>
+      </div>
+
+      <div class="al-card">
+        <div class="al-card-icon">✅</div>
+        <div class="al-card-title">Human approves</div>
+        <div class="al-card-desc">Every spec is reviewed in the Hive task board. Approve, reject, or iterate — you stay in control of what ships.</div>
+      </div>
+
+      <div class="al-card">
+        <div class="al-card-icon">🔀</div>
+        <div class="al-card-title">Auto-opens a PR</div>
+        <div class="al-card-desc">On completion, the agent pushes a branch and opens a pull request with full context linked back to the original task.</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="al-footer">
+    Built autonomously by a Hive agent.
+  </footer>
+
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+(function () {
+  /* Skip animation entirely when user prefers reduced motion */
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
+  var stages     = document.querySelectorAll('#al-pipeline .al-stage');
+  var connectors = document.querySelectorAll('#al-pipeline .al-connector-track');
+  var dot        = document.getElementById('al-dot');
+  var current    = 0;
+  var DWELL      = 1200; /* ms each stage is active */
+
+  if (!stages.length || !dot) return;
+
+  /* Show the travel dot */
+  dot.style.display = 'block';
+
+  function activate(idx) {
+    stages.forEach(function (s) { s.classList.remove('active'); });
+    stages[idx].classList.add('active');
+
+    /* Move dot: it sits on connector[idx-1] → connector[idx] boundary */
+    /* connector[i] links stage[i] to stage[i+1]                        */
+    if (idx === 0) {
+      /* Dot rests at left edge of first connector */
+      moveDotToConnector(0, '0%');
+    } else if (idx < connectors.length) {
+      /* Dot arrives at right edge of connector[idx-1], i.e. left edge of connector[idx] */
+      moveDotToConnector(idx - 1, '100%');
+    }
+  }
+
+  function moveDotToConnector(connectorIdx, pct) {
+    var track = connectors[connectorIdx];
+    if (!track) return;
+    var rect  = track.getBoundingClientRect();
+    var pRect = dot.parentElement.getBoundingClientRect();
+    var left  = rect.left - pRect.left + (pct === '100%' ? rect.width : 0);
+    dot.style.left = left + 'px';
+  }
+
+  /* Detach dot from first connector and append to the pipeline container
+   * so it can move freely across all connectors via absolute positioning. */
+  var pipeline = document.getElementById('al-pipeline');
+  pipeline.style.position = 'relative';
+  dot.remove();
+  dot.style.position = 'absolute';
+  dot.style.top = '26px'; /* vertically centre on the node row (52px / 2 - 5px) */
+  pipeline.appendChild(dot);
+
+  function tick() {
+    current = (current + 1) % stages.length;
+    /* Animate dot travelling across the connector before the next stage lights up */
+    var connIdx = current - 1;
+    if (connIdx >= 0 && connIdx < connectors.length) {
+      var track = connectors[connIdx];
+      var tRect = track.getBoundingClientRect();
+      var pRect = pipeline.getBoundingClientRect();
+      var startLeft = tRect.left - pRect.left;
+      var endLeft   = startLeft + tRect.width;
+
+      dot.style.transition = 'left ' + (DWELL * 0.7) + 'ms ease, opacity 0.3s ease';
+      dot.style.opacity    = '1';
+      dot.style.left       = startLeft + 'px';
+
+      /* Trigger reflow so the transition runs from startLeft */
+      void dot.offsetWidth;
+
+      dot.style.left = endLeft + 'px';
+
+      setTimeout(function () {
+        stages.forEach(function (s) { s.classList.remove('active'); });
+        stages[current].classList.add('active');
+      }, DWELL * 0.6);
+
+    } else {
+      /* Wrapping back to stage 0: fade dot out, reset position */
+      dot.style.opacity = '0';
+      setTimeout(function () {
+        var firstTrack = connectors[0];
+        if (firstTrack) {
+          var pRect = pipeline.getBoundingClientRect();
+          var tRect = firstTrack.getBoundingClientRect();
+          dot.style.transition = 'none';
+          dot.style.left = (tRect.left - pRect.left) + 'px';
+        }
+        stages.forEach(function (s) { s.classList.remove('active'); });
+        stages[0].classList.add('active');
+        setTimeout(function () { dot.style.opacity = '1'; }, 80);
+      }, 300);
+    }
+  }
+
+  /* Initial position */
+  var firstTrack = connectors[0];
+  if (firstTrack) {
+    var pRect = pipeline.getBoundingClientRect();
+    var tRect = firstTrack.getBoundingClientRect();
+    dot.style.transition = 'none';
+    dot.style.left = (tRect.left - pRect.left) + 'px';
+    dot.style.opacity = '1';
+  }
+
+  setInterval(tick, DWELL);
+})();
+</script>
+{% endblock %}
