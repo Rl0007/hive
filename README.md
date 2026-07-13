@@ -38,3 +38,30 @@ This app can use GitHub Actions for CI. The following workflows are configured:
 ### License
 
 agpl-3.0
+
+### FAQ
+
+**What is BWH Hive?**
+
+BWH Hive (`bwh_hive`) is a Modern Project Management Software built on the [Frappe](https://github.com/frappe/frappe) framework. It provides a React-based frontend and a Python backend for managing projects, tasks, and team collaboration.
+
+**How do I run it locally?**
+
+Install the app with `bench` (see Installation above), then start the Frappe backend:
+
+```bash
+bench start
+```
+
+For frontend development, run the Vite dev server separately:
+
+```bash
+cd apps/bwh_hive/frontend
+yarn dev
+```
+
+The Frappe backend is available at `pms.localhost:8000` and the frontend dev server at `localhost:8080`.
+
+**How do I contribute?**
+
+Fork the repository, create a feature branch off `develop`, and run `pre-commit install` in the app directory before committing (see Contributing above). Open a pull request targeting the `develop` branch.
